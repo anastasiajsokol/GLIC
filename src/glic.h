@@ -2,39 +2,9 @@
 #define GLIC_H
 
 #include <cmath>
+#include "vec.h"
 
 namespace glic {
-    typedef float glffloat(float);
-    typedef float gl2float(float, float);
-
-    // vector types
-    struct vec2 {
-        float x, y;
-        vec2(float x, float y) : x(x), y(y) {}
-
-        // helpers
-        vec2 apply(glffloat* function) const { return vec2(function(x), function(y)); }
-        static vec2 zip(gl2float *function, vec2 x, vec2 y){ return vec2(function(x.x, y.x), function(x.y, y.y)); }
-    };
-
-    struct vec3 {
-        float x, y, z;
-        vec3(float x, float y, float z) : x(x), y(y), z(z) {}
-
-        // helpers
-        vec3 apply(glffloat* function) const { return vec3(function(x), function(y), function(z)); }
-        static vec3 zip(gl2float *function, vec3 x, vec3 y){ return vec3(function(x.x, y.x), function(x.y, y.y), function(x.z, y.z)); }
-    };
-
-    struct vec4 {
-        float x, y, z, w;
-        vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
-
-        // helpers
-        vec4 apply(glffloat *function) const { return vec4(function(x), function(y), function(z), function(w)); }
-        static vec4 zip(gl2float *function, vec4 x, vec4 y){ return vec4(function(x.x, y.x), function(x.y, y.y), function(x.z, y.z), function(x.w, y.w)); }
-    };
-
     // trigonometry
 
     float radians(const float degrees){ return degrees * 180.0 / M_PI; }
@@ -198,6 +168,19 @@ namespace glic {
     vec3 mix(const vec3 x, const vec3 y, const float a){ return vec3(mix(x.x, y.x, a), mix(x.y, y.y, a), mix(x.z, y.z, a)); }
     vec4 mix(const vec4 x, const vec4 y, const float a){ return vec4(mix(x.x, y.x, a), mix(x.y, y.y, a), mix(x.z, y.z, a), mix(x.w, y.w, a)); }
 
+    float smoothstep(const float edge0, const float edge1, const float x){
+        const float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+        return t * t * (3.0 - 2.0 * t);
+    }
+
+    vec2 smoothstep(const vec2 edge0, const vec2 edge1, const vec2 x){ return vec2(smoothstep(edge0.x, edge1.x, x.x), smoothstep(edge0.y, edge1.y, x.y)); }
+    vec3 smoothstep(const vec3 edge0, const vec3 edge1, const vec3 x){ return vec3(smoothstep(edge0.x, edge1.x, x.x), smoothstep(edge0.y, edge1.y, x.y), smoothstep(edge0.z, edge1.z, x.z)); }
+    vec4 smoothstep(const vec4 edge0, const vec4 edge1, const vec4 x){ return vec4(smoothstep(edge0.x, edge1.x, x.x), smoothstep(edge0.y, edge1.y, x.y), smoothstep(edge0.z, edge1.z, x.z), smoothstep(edge0.w, edge1.w, x.w)); }
+
+    vec2 smoothstep(const float edge0, const float edge1, const vec2 x){ return vec2(smoothstep(edge0, edge1, x.x), smoothstep(edge0, edge1, x.y)); }
+    vec3 smoothstep(const float edge0, const float edge1, const vec3 x){ return vec3(smoothstep(edge0, edge1, x.x), smoothstep(edge0, edge1, x.y), smoothstep(edge0, edge1, x.z)); }
+    vec4 smoothstep(const float edge0, const float edge1, const vec4 x){ return vec4(smoothstep(edge0, edge1, x.x), smoothstep(edge0, edge1, x.y), smoothstep(edge0, edge1, x.z), smoothstep(edge0, edge1, x.w)); }
+
     float step(const float edge, const float x){ return x >= edge; }
     vec2 step(const vec2 edge, const vec2 x){ return vec2::zip(step, edge, x); }
     vec3 step(const vec3 edge, const vec3 x){ return vec3::zip(step, edge, x); }
@@ -208,6 +191,68 @@ namespace glic {
     vec3 step(const float edge, const vec3 x){ return vec3(step(edge, x.x), step(edge, x.y), step(edge, x.z)); }
     vec4 step(const float edge, const vec4 x){ return vec4(step(edge, x.x), step(edge, x.y), step(edge, x.z), step(edge, x.w)); }
     
-    // left off at smoothstep
+    // geometric
+
+    float length(const float x){ return std::abs(x); }
+    float length(const vec2 x){ return std::sqrt(x.x * x.x + x.y * x.y); }
+    float length(const vec3 x){ return std::sqrt(x.x * x.x + x.y * x.y + x.z * x.z); }
+    float length(const vec4 x){ return std::sqrt(x.x * x.x + x.y * x.y + x.z * x.z + x.w * x.w); }
+
+    float distance(const float p0, const float p1){ length(p1 - p0); }
+    float distance(const vec2 p0, const vec2 p1){ length(p1 - p0); }
+    float distance(const vec3 p0, const vec3 p1){ length(p1 - p0); }
+    float distance(const vec4 p0, const vec4 p1){ length(p1 - p0); }
+
+    float dot(const float x, const float y){ return x * y; }
+    float dot(const vec2 x, const vec2 y){ return x.x * y.x + x.y * y.y; }
+    float dot(const vec3 x, const vec3 y){ return x.x * y.x + x.y * y.y + x.z * y.z; }
+    float dot(const vec4 x, const vec4 y){ return x.x * y.x + x.y * y.y + x.z * y.z + x.w * y.w; }
+
+    vec3 cross(const vec3 x, const vec3 y){
+        return vec3(
+            x.y * y.z - x.z * y.y,
+            x.z * y.x - x.x * y.z,
+            x.x * y.y - x.y * y.x
+        );
+    }
+
+    float normalize(const float x){ return x / x; }
+    vec2 normalize(const vec2 x){ return x / length(x); }
+    vec3 normalize(const vec3 x){ return x / length(x); }
+    vec4 normalize(const vec4 x){ return x / length(x); }
+
+    float faceforward(const float n, const float i, const float nref){ return dot(nref, i) < 0 ? n : -n; }
+    vec2 faceforward(const vec2 n, const vec2 i, const vec2 nref){ return dot(nref, i) < 0 ? n : -n; }
+    vec3 faceforward(const vec3 n, const vec3 i, const vec3 nref){ return dot(nref, i) < 0 ? n : -n; }
+    vec4 faceforward(const vec4 n, const vec4 i, const vec4 nref){ return dot(nref, i) < 0 ? n : -n; }
+
+    float reflect(const float i, const float n){ return i - 2 * dot(n, i) * n; }
+    vec2 reflect(const vec2 i, const vec2 n){ return i - 2 * dot(n, i) * n; }
+    vec3 reflect(const vec3 i, const vec3 n){ return i - 2 * dot(n, i) * n; }
+    vec4 reflect(const vec4 i, const vec4 n){ return i - 2 * dot(n, i) * n; }
+
+    float refract(const float i, const float n, const float eta){
+        const float dotni = dot(n, i);
+        float k = 1.0 - eta * eta * (1.0 - dotni * dotni);
+        return (k < 0.0) ? 0.0 : (eta * i - (eta * dotni + sqrt(k)) * n);
+    }
+
+    vec2 refract(const vec2 i, const vec2 n, const float eta){
+        const float dotni = dot(n, i);
+        float k = 1.0 - eta * eta * (1.0 - dotni * dotni);
+        return (k < 0.0) ? vec2(0.0) : (eta * i - (eta * dotni + sqrt(k)) * n);
+    }
+
+    vec3 refract(const vec3 i, const vec3 n, const float eta){
+        const float dotni = dot(n, i);
+        float k = 1.0 - eta * eta * (1.0 - dotni * dotni);
+        return (k < 0.0) ? vec3(0.0) : (eta * i - (eta * dotni + sqrt(k)) * n);
+    }
+
+    vec4 refract(const vec4 i, const vec4 n, const float eta){
+        const float dotni = dot(n, i);
+        float k = 1.0 - eta * eta * (1.0 - dotni * dotni);
+        return (k < 0.0) ? vec4(0.0) : (eta * i - (eta * dotni + sqrt(k)) * n);
+    }
 };
 #endif
