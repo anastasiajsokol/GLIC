@@ -1,6 +1,7 @@
 #ifndef GLIC_H
 #define GLIC_H
 
+#include <algorithm>
 #include <cmath>
 #include "vec.h"
 
